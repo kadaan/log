@@ -294,11 +294,35 @@ function log_entity_property_info_alter(&$info) {
   );
   $properties['done'] = array(
     'label' => t('Done'),
+    'type' => 'boolean',
     'description' => t('Whether the log is done.'),
     'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer log module',
     'schema field' => 'done',
-    'type' => 'boolean',
+  );
+  $properties['started'] = array(
+    'label' => t('Started'),
+    'type' => 'date',
+    'description' => t('The timestamp when the log entity was started'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer log module',
+    'schema field' => 'started',
+  );
+  $properties['finished'] = array(
+    'label' => t('Finished'),
+    'type' => 'date',
+    'description' => t('The timestamp when the log entity was finished'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer log module',
+    'schema field' => 'finished',
+  );
+  $properties['time_spent'] = array(
+    'label' => t('Time spent'),
+    'type' => 'decimal',
+    'description' => t('The time spent on the task'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer log module',
+    'schema field' => 'time_spent',
   );
 }
 
@@ -326,6 +350,13 @@ function log_field_extra_fields() {
       'label' => t('Timestamp'),
       'description' => t('The timestamp of the log entry.'),
       'weight' => -5,
+    );
+
+    // Display the time_spent field.
+    $extra_fields['log'][$type->type]['form']['time_spent'] = array(
+      'label' => t('Time spent'),
+      'description' => t('The time spent on the task.'),
+      'weight' => 99,
     );
 
     // Display the done field.
@@ -361,6 +392,12 @@ function log_log_update($log) {
  */
 function log_action_info() {
   return array(
+    'log_start_action' => array(
+      'type' => 'log',
+      'label' => t('Start'),
+      'configurable' => FALSE,
+      'triggers' => array('any'),
+    ),
     'log_done_action' => array(
       'type' => 'log',
       'label' => t('Mark as done'),
@@ -469,6 +506,30 @@ function log_filter_log_tips($filter, $format, $long = FALSE) {
  * Log action callbacks
  * *************************************************************/
 
+ /**
+  * Action function for log_start_action.
+  *
+  * Marks a log as done.
+  *
+  * @param Log $log
+  *   The log entity object.
+  * @param array $context
+  *   Array with parameters for this action.
+  */
+ function log_start_action(Log $log, $context = array()) {
+
+   // Only proceed if the log is not already done.
+   if ($log->done) {
+     return;
+   }
+
+   // Set the started time.
+   $log->started = REQUEST_TIME;
+
+   // Save the log.
+   log_save($log);
+ }
+
 /**
  * Action function for log_done_action.
  *
@@ -488,6 +549,14 @@ function log_done_action(Log $log, $context = array()) {
 
   // Mark the log as done.
   $log->done = TRUE;
+
+  // Set the finished time.
+  $log->finished = REQUEST_TIME;
+
+  // Set the time spent
+  if (empty($log->time_spent) && $log->started > 0 && $log->finished > 0) {
+    $log->time_spent = round(($log->finished - $log->started)/60.0/60.0, 2);
+  }
 
   // Save the log.
   log_save($log);

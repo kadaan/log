@@ -60,6 +60,24 @@ function log_schema() {
         'not null' => TRUE,
         'default' => 1,
       ),
+      'started' => array(
+        'description' => 'Timestamp when the log was started',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'finished' => array(
+        'description' => 'Timestamp when the log was finished',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'time_spent' => array(
+        'description' => 'The time spent on the task',
+        'type' => 'numeric',
+        'precision' => 5,
+        'scale' => 2,
+      ),
     ),
     'primary key' => array('id'),
     'indexes' => array(
@@ -70,6 +88,9 @@ function log_schema() {
       'created' => array('created'),
       'modified' => array('changed'),
       'done' => array('done'),
+      'started' => array('started'),
+      'finished' => array('finished'),
+      'time_spent' => array('time_spent'),
     ),
   );
   $schema['log_type'] = array(
@@ -205,4 +226,43 @@ function log_update_7002(array &$sandbox) {
 
   // Mark all existing log items with timestamps before now as "done".
   db_query('UPDATE {log} SET done = 1 WHERE timestamp <= :now', array(':now' => REQUEST_TIME));
+}
+
+/**
+ * Add 'started', 'finished', and 'time_spent' fields to Logs.
+ *
+ * @param array $sandbox
+ *   The update sandbox array.
+ */
+function log_update_7003(array &$sandbox) {
+
+  // Add started field to Logs.
+  $started = array(
+    'description' => 'Timestamp when the log was started',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field('log', 'started', $started);
+  db_add_index('log', 'started', array('started'));
+
+  // Add finished field to Logs.
+  $finished = array(
+    'description' => 'Timestamp when the log was finished',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field('log', 'finished', $finished);
+  db_add_index('log', 'finished', array('finished'));
+
+  // Add time_spent field to Logs.
+  $time_spent = array(
+    'description' => 'The time spent on the task',
+    'type' => 'numeric',
+    'precision' => 5,
+    'scale' => 2,
+  );
+  db_add_field('log', 'time_spent', $time_spent);
+  db_add_index('log', 'time_spent', array('time_spent'));
 }

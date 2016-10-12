@@ -50,6 +50,9 @@ class LogController extends EntityAPIController {
       'created' => REQUEST_TIME,
       'changed' => REQUEST_TIME,
       'done' => FALSE,
+      'started' => 0,
+      'finished' => 0,
+      'time_spent' => NULL,
     );
     return parent::create($values);
   }

@@ -132,6 +132,17 @@ function log_form(array $form, array &$form_state, Log $log) {
     '#required' => TRUE,
   );
 
+  // Time spent
+  $form['time_spent'] = array(
+    '#type' => 'numberfield',
+    '#title' => t('Time spent'),
+    '#description' => t('How long did this task take?'),
+    '#field_suffix' => t('hour(s)'),
+    '#min' => 0,
+    '#step' => .01,
+    '#default_value' => $log->time_spent,
+  );
+
   // If the log is new, and the log type marks new logs as "done" by default,
   // mark the log as done and add some Javascript to auto-check/uncheck based
   // on the timestamp.
@@ -207,6 +218,13 @@ function log_form_validate(array $form, array &$form_state) {
       $form_state['log_done_warning'] = TRUE;
     }
   }
+
+  // If a log is marked "done", but the time spent is not specified, display
+  // a warning, but allow the user to continue if they submit the form again.
+  if (empty($form_state['log_time_spent_warning']) && !empty($form_state['values']['done']) && empty($form_state['values']['time_spent'])) {
+    form_set_error('time_spent', t('You marked this log item as "done", but it does not have time spent specified. If you are OK with this fact, click save again.'));
+    $form_state['log_time_spent_warning'] = TRUE;
+  }
 }
 
 /**
@@ -224,6 +242,15 @@ function log_form_submit(array $form, array &$form_state) {
 
   // Convert the date to a timestamp.
   $form_state['values']['timestamp'] = strtotime($form_state['values']['timestamp']);
+
+  // Default time spent if the user overrides the warning
+  if (!empty($form_state['log_time_spent_warning'])) {
+    if ($form_state['values']['time_spent'] == "") {
+      $form_state['values']['time_spent'] = 0.00;
+    }
+  } else if ($form_state['values']['time_spent'] == "") {
+    $form_state['values']['time_spent'] = NULL;
+  }
 
   // Build the entity from the form values.
   entity_form_submit_build_entity('log', $log, $form, $form_state);
