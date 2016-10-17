@@ -509,7 +509,7 @@ function log_filter_log_tips($filter, $format, $long = FALSE) {
  /**
   * Action function for log_start_action.
   *
-  * Marks a log as done.
+  * Marks a log as started.
   *
   * @param Log $log
   *   The log entity object.
@@ -518,8 +518,8 @@ function log_filter_log_tips($filter, $format, $long = FALSE) {
   */
  function log_start_action(Log $log, $context = array()) {
 
-   // Only proceed if the log is not already done.
-   if ($log->done) {
+   // Only proceed if the log is not already started or done.
+   if ($log->started != 0 || $log->done) {
      return;
    }
 
